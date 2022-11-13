@@ -8,7 +8,7 @@
 
 const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
-const { buildCCPOrg1, buildCCPOrg2, buildWallet, prettyJSONString} = require('../../test-application/javascript/AppUtil.js');
+const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet, prettyJSONString} = require('../../test-application/javascript/AppUtil.js');
 
 const myChannel = 'mychannel';
 const myChaincodeName = 'auction';
@@ -31,7 +31,10 @@ async function closeAuction(ccp,wallet,user,auctionID) {
 
 		let statefulTxn = contract.createTransaction('CloseAuction');
 
-		if (auctionJSON.organizations.length === 2) {
+		// Set the endorsing orgs for this transaction.
+		if (auctionJSON.organizations.length === 3) {
+			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1],auctionJSON.organizations[2]);
+		}else if (auctionJSON.organizations.length === 2) {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1]);
 		} else {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0]);
@@ -74,6 +77,12 @@ async function main() {
 		else if (org === 'Org2' || org === 'org2') {
 			const ccp = buildCCPOrg2();
 			const walletPath = path.join(__dirname, 'wallet/org2');
+			const wallet = await buildWallet(Wallets, walletPath);
+			await closeAuction(ccp,wallet,user,auctionID);
+		}
+		else if (org === 'Org3' || org === 'org3') {
+			const ccp = buildCCPOrg3();
+			const walletPath = path.join(__dirname, 'wallet/org3');
 			const wallet = await buildWallet(Wallets, walletPath);
 			await closeAuction(ccp,wallet,user,auctionID);
 		}  else {

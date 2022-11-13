@@ -16,6 +16,14 @@ then
     exit 1
 fi
 
+# If bin directory does not exist
+if [ ! -d bin ]
+then
+    curl -sSL https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/bootstrap.sh | bash -s
+else
+    echo "Setup already done"
+fi
+
 # Run switch case
 case $1 in
     1)

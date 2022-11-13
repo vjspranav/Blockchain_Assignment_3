@@ -5,7 +5,7 @@ cd test-network
 cd addOrg3
 ./addOrg3.sh up -ca
 
-cd ..
+cd ../
 ./network.sh deployCC -ccn auction -ccp ../auction1/chaincode-go/ -ccl go
 
 cd ../auction1/application-javascript
@@ -59,17 +59,30 @@ node revealBid.js org3 bidder3 Auction1 $bidId3
 
 # Declare Winner
 OUTPUT=$(node endAuction.js org1 seller Auction1)
+echo $OUTPUT
 # Get line containing "winner":
-WINNER=$(echo "$OUTPUT" | grep "winner:")
-# Get the value after :, before ,OU and trim whitespace
-winner=$(echo "$WINNER" | cut -d':' -f2 | cut -d',' -f1 | xargs)
-# Get the org, after OU= and before +OU and trim whitespace
-org=$(echo "$WINNER" | cut -d'OU=' -f2 | cut -d'+' -f1 | xargs)
+WINNER=$(echo "$OUTPUT" | grep "winner\"")
+
+# cut at first = till , 
+winner=$(echo "$WINNER" | cut -d'=' -f2 | cut -d',' -f1 | xargs)
+
+# Cut at second = till + 
+org=$(echo "$WINNER" | cut -d'=' -f3 | cut -d'+' -f1 | xargs)
+
+echo $winner $org
 
 # Clean Up
 rm -rf wallet
 cd ../../test-network/
 ./network.sh down
 
-# Print in blue color winner and org
-echo -e "\e[34mWinner: $winner, Org: $org\e[0m"
+# check if winner and org are empty
+if [ -z "$winner" ] && [ -z "$org" ]
+then
+    # Print auction failed in red
+    echo -e "\e[31mAuction Failed\e[0m" 
+    exit 1
+fi
+
+# Print in green color winner and org
+echo -e "\e[32mWinner is $winner from $org\e[0m"

@@ -49,7 +49,7 @@ async function connectToOrg3CA() {
 	const walletOrg3 = await buildWallet(Wallets, walletPathOrg3);
 
 	await enrollAdmin(caOrg3Client, walletOrg3, mspOrg3);
-
+	
 }
 
 async function main() {

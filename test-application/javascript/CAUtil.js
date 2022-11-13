@@ -45,6 +45,20 @@ exports.enrollAdmin = async (caClient, wallet, orgMspId) => {
 		};
 		await wallet.put(adminUserId, x509Identity);
 		console.log('Successfully enrolled admin user and imported it into the wallet');
+
+		// If org3, then also create affiliation
+		if (orgMspId === 'Org3MSP') {
+			// Must use an admin to register a new user
+			const adminIdentity = await wallet.get(adminUserId);
+
+			// build a user object for authenticating with the CA
+			const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
+			const adminUser = await provider.getUserContext(adminIdentity, adminUserId);
+			const affiliationService = caClient.newAffiliationService();
+			const affiliation = await affiliationService.create({ name: 'org3.department1', force: true }, adminUser);
+			console.log('Affiliation created: ', affiliation);
+
+		}
 	} catch (error) {
 		console.error(`Failed to enroll admin user : ${error}`);
 	}

@@ -41,6 +41,9 @@ async function submitBid(ccp,wallet,user,auctionID,bidID) {
 
 		let statefulTxn = contract.createTransaction('SubmitBid');
 
+		if (auctionJSON.organizations.lrngth === 3){
+			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1],auctionJSON.organizations[2]);
+		}
 		if (auctionJSON.organizations.length === 2) {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1]);
 		} else {

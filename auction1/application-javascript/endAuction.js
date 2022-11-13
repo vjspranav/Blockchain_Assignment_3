@@ -30,8 +30,9 @@ async function endAuction(ccp,wallet,user,auctionID) {
 		let auctionJSON = JSON.parse(auctionString);
 
 		let statefulTxn = contract.createTransaction('EndAuction');
-
-		if (auctionJSON.organizations.length === 2) {
+		if (auctionJSON.organizations.length === 3) {
+			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1],auctionJSON.organizations[2]);
+		}else if (auctionJSON.organizations.length === 2) {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1]);
 		} else {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0]);

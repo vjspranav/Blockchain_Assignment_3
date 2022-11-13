@@ -41,7 +41,9 @@ async function addBid(ccp,wallet,user,auctionID,bidID) {
 			bid: tmapData
 		});
 
-		if (auctionJSON.organizations.length === 2) {
+		if (auctionJSON.organizations.length === 3) {
+			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1],auctionJSON.organizations[2]);
+		} else if (auctionJSON.organizations.length === 2) {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1]);
 		} else {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0]);
