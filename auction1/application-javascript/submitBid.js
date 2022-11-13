@@ -8,7 +8,7 @@
 
 const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
-const { buildCCPOrg1, buildCCPOrg2, buildWallet } = require('../../test-application/javascript/AppUtil.js');
+const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet } = require('../../test-application/javascript/AppUtil.js');
 
 const myChannel = 'mychannel';
 const myChaincodeName = 'auction';
@@ -87,9 +87,15 @@ async function main() {
 			const wallet = await buildWallet(Wallets, walletPath);
 			await submitBid(ccp,wallet,user,auctionID,bidID);
 		}
+		else if(org === 'Org3' || org === 'org3') {
+			const ccp = buildCCPOrg3();
+			const walletPath = path.join(__dirname, 'wallet/org3');
+			const wallet = await buildWallet(Wallets, walletPath);
+			await submitBid(ccp,wallet,user,auctionID,bidID);
+		}
 		else {
 			console.log('Usage: node submitBid.js org userID auctionID bidID');
-			console.log('Org must be Org1 or Org2');
+			console.log('Org must be Org1 or Org2 or Org3');
 		}
 	} catch (error) {
 		console.error(`******** FAILED to run the application: ${error}`);

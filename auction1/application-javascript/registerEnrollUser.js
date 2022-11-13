@@ -10,10 +10,11 @@ const { Wallets } = require('fabric-network');
 const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 const { buildCAClient, registerAndEnrollUser } = require('../../test-application/javascript/CAUtil.js');
-const { buildCCPOrg1, buildCCPOrg2, buildWallet } = require('../../test-application/javascript/AppUtil.js');
+const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet } = require('../../test-application/javascript/AppUtil.js');
 
 const mspOrg1 = 'Org1MSP';
 const mspOrg2 = 'Org2MSP';
+const mspOrg3 = 'Org3MSP';
 
 async function connectToOrg1CA(UserID) {
 	console.log('\n--> Register and enrolling new user');
@@ -38,6 +39,20 @@ async function connectToOrg2CA(UserID) {
 	await registerAndEnrollUser(caOrg2Client, walletOrg2, mspOrg2, UserID, 'org2.department1');
 
 }
+
+
+async function connectToOrg3CA(UserID) {
+	console.log('\n--> Register and enrolling new user');
+	const ccpOrg3 = buildCCPOrg3();
+	const caOrg3Client = buildCAClient(FabricCAServices, ccpOrg3, 'ca.org3.example.com');
+
+	const walletPathOrg3 = path.join(__dirname, 'wallet/org3');
+	const walletOrg3 = await buildWallet(Wallets, walletPathOrg3);
+
+	await registerAndEnrollUser(caOrg3Client, walletOrg3, mspOrg3, UserID, 'org3.department1');
+
+}
+
 async function main() {
 
 	if (process.argv[2] === undefined && process.argv[3] === undefined) {
@@ -55,6 +70,9 @@ async function main() {
 		}
 		else if (org === 'Org2' || org === 'org2') {
 			await connectToOrg2CA(userId);
+		}
+		else if (org === 'Org3' || org === 'org3') {
+			await connectToOrg3CA(userId);
 		} else {
 			console.log('Usage: node registerEnrollUser.js org userID');
 			console.log('Org must be Org1 or Org2');

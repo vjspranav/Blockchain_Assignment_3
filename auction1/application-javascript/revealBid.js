@@ -8,7 +8,7 @@
 
 const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
-const { buildCCPOrg1, buildCCPOrg2, buildWallet, prettyJSONString} = require('../../test-application/javascript/AppUtil.js');
+const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet, prettyJSONString} = require('../../test-application/javascript/AppUtil.js');
 
 const myChannel = 'mychannel';
 const myChaincodeName = 'auction';
@@ -83,6 +83,12 @@ async function main() {
 		else if (org === 'Org2' || org === 'org2') {
 			const ccp = buildCCPOrg2();
 			const walletPath = path.join(__dirname, 'wallet/org2');
+			const wallet = await buildWallet(Wallets, walletPath);
+			await addBid(ccp,wallet,user,auctionID,bidID);
+		}
+		else if (org === 'Org3' || org === 'org3') {
+			const ccp = buildCCPOrg3();
+			const walletPath = path.join(__dirname, 'wallet/org3');
 			const wallet = await buildWallet(Wallets, walletPath);
 			await addBid(ccp,wallet,user,auctionID,bidID);
 		}
