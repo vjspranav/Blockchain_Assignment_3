@@ -28,11 +28,15 @@ fi
 case $1 in
     1)
         echo "Running auction 1"
+        # Print in yellow first price auction
+        echo -e "\e[33mFirst Price Auction\e[0m"
         ./runA1
         ;;
     2)
         echo "Running auction 2"
-        echo "Not implemented"
+        # Print in yellow second price auction
+        echo -e "\e[33mSecond Price Auction\e[0m"
+        ./runA2
         ;;
     3)
         echo "Running auction 3"
