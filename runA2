@@ -9,6 +9,7 @@ cd ../
 ./network.sh deployCC -ccn auction -ccp ../auction2/chaincode-go/ -ccl go
 
 cd ../auction2/application-javascript
+npm i
 
 node enrollAdmin.js org1
 node enrollAdmin.js org2

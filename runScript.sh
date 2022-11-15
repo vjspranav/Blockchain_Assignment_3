@@ -40,6 +40,8 @@ case $1 in
         ;;
     3)
         echo "Running auction 3"
-        echo "Not implemented"
+        # Print in yellow Dutch Auction
+        echo -e "\e[33mDutch Auction\e[0m"
+        ./runA3
         ;;
 esac
