@@ -10,9 +10,9 @@ then
 fi
 
 # Check if auctionNumber is 1 or 2 or 3
-if [ $1 -ne 1 ] && [ $1 -ne 2 ] && [ $1 -ne 3 ]
+if [ $1 -ne 1 ] && [ $1 -ne 2 ] && [ $1 -ne 3 ] && [$1 -ne 4]
 then
-    echo "Auction number should be 1 or 2 or 3"
+    echo "Auction number should be 1 or 2 or 3 or 4"
     exit 1
 fi
 
@@ -40,8 +40,15 @@ case $1 in
         ;;
     3)
         echo "Running auction 3"
+        # Print in yellow average price auction
+        echo -e "\e[33mAverage Price Auction\e[0m"
+        ./runA3
+        ;;
+    
+    4)
+        echo "Running auction 4"
         # Print in yellow Dutch Auction
         echo -e "\e[33mDutch Auction\e[0m"
-        ./runA3
+        ./runA4
         ;;
 esac
