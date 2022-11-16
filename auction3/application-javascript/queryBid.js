@@ -8,16 +8,17 @@
 
 const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
-const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet, prettyJSONString } = require('../../../test-application/javascript/AppUtil.js');
+const { buildCCPOrg1, buildCCPOrg2, buildWallet, prettyJSONString} = require('../../test-application/javascript/AppUtil.js');
 
 const myChannel = 'mychannel';
 const myChaincodeName = 'auction';
 
-async function queryBid (ccp, wallet, user, auctionID, bidID) {
+async function queryBid(ccp,wallet,user,auctionID,bidID) {
 	try {
-		const gateway = new Gateway();
-		// connect using Discovery enabled
 
+		const gateway = new Gateway();
+
+		//connect using Discovery enabled
 		await gateway.connect(ccp,
 			{ wallet: wallet, identity: user, discovery: { enabled: true, asLocalhost: true } });
 
@@ -25,7 +26,7 @@ async function queryBid (ccp, wallet, user, auctionID, bidID) {
 		const contract = network.getContract(myChaincodeName);
 
 		console.log('\n--> Evaluate Transaction: read bid from private data store');
-		const result = await contract.evaluateTransaction('QueryBid', auctionID, bidID);
+		let result = await contract.evaluateTransaction('QueryBid',auctionID,bidID);
 		console.log('*** Result: Bid: ' + prettyJSONString(result.toString()));
 
 		gateway.disconnect();
@@ -34,8 +35,9 @@ async function queryBid (ccp, wallet, user, auctionID, bidID) {
 	}
 }
 
-async function main () {
+async function main() {
 	try {
+
 		if (process.argv[2] === undefined || process.argv[3] === undefined ||
             process.argv[4] === undefined || process.argv[5] === undefined) {
 			console.log('Usage: node bid.js org userID auctionID bidID');
@@ -51,17 +53,13 @@ async function main () {
 			const ccp = buildCCPOrg1();
 			const walletPath = path.join(__dirname, 'wallet/org1');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await queryBid(ccp, wallet, user, auctionID, bidID);
-		} else if (org === 'Org2' || org === 'org2') {
+			await queryBid(ccp,wallet,user,auctionID,bidID);
+		}
+		else if (org === 'Org2' || org === 'org2') {
 			const ccp = buildCCPOrg2();
 			const walletPath = path.join(__dirname, 'wallet/org2');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await queryBid(ccp, wallet, user, auctionID, bidID);
-		} else if (org === 'Org3' || org === 'org3') {
-			const ccp = buildCCPOrg3();
-			const walletPath = path.join(__dirname, 'wallet/org3');
-			const wallet = await buildWallet(Wallets, walletPath);
-			await queryBid(ccp, wallet, user, auctionID, bidID);
+			await queryBid(ccp,wallet,user,auctionID,bidID);
 		} else {
 			console.log('Usage: node bid.js org userID auctionID bidID');
 			console.log('Org must be Org1 or Org2');
@@ -70,5 +68,6 @@ async function main () {
 		console.error(`******** FAILED to run the application: ${error}`);
 	}
 }
+
 
 main();

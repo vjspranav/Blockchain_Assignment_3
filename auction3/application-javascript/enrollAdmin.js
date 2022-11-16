@@ -14,8 +14,9 @@ const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet } = require('../..
 
 const mspOrg1 = 'Org1MSP';
 const mspOrg2 = 'Org2MSP';
+const mspOrg3 = 'Org3MSP';
 
-async function connectToOrg1CA () {
+async function connectToOrg1CA() {
 	console.log('\n--> Enrolling the Org1 CA admin');
 	const ccpOrg1 = buildCCPOrg1();
 	const caOrg1Client = buildCAClient(FabricCAServices, ccpOrg1, 'ca.org1.example.com');
@@ -24,9 +25,10 @@ async function connectToOrg1CA () {
 	const walletOrg1 = await buildWallet(Wallets, walletPathOrg1);
 
 	await enrollAdmin(caOrg1Client, walletOrg1, mspOrg1);
+
 }
 
-async function connectToOrg2CA () {
+async function connectToOrg2CA() {
 	console.log('\n--> Enrolling the Org2 CA admin');
 	const ccpOrg2 = buildCCPOrg2();
 	const caOrg2Client = buildCAClient(FabricCAServices, ccpOrg2, 'ca.org2.example.com');
@@ -35,20 +37,23 @@ async function connectToOrg2CA () {
 	const walletOrg2 = await buildWallet(Wallets, walletPathOrg2);
 
 	await enrollAdmin(caOrg2Client, walletOrg2, mspOrg2);
+
 }
 
-async function connectToOrg3CA () {
+async function connectToOrg3CA() {
 	console.log('\n--> Enrolling the Org3 CA admin');
 	const ccpOrg3 = buildCCPOrg3();
 	const caOrg3Client = buildCAClient(FabricCAServices, ccpOrg3, 'ca.org3.example.com');
-	
+
 	const walletPathOrg3 = path.join(__dirname, 'wallet/org3');
 	const walletOrg3 = await buildWallet(Wallets, walletPathOrg3);
 
-	await enrollAdmin(caOrg3Client, walletOrg3, 'Org3MSP');
+	await enrollAdmin(caOrg3Client, walletOrg3, mspOrg3);
+	
 }
 
-async function main () {
+async function main() {
+
 	if (process.argv[2] === undefined) {
 		console.log('Usage: node enrollAdmin.js Org');
 		process.exit(1);
@@ -57,11 +62,14 @@ async function main () {
 	const org = process.argv[2];
 
 	try {
+
 		if (org === 'Org1' || org === 'org1') {
 			await connectToOrg1CA();
-		} else if (org === 'Org2' || org === 'org2') {
+		}
+		else if (org === 'Org2' || org === 'org2') {
 			await connectToOrg2CA();
-		} else if (org === 'Org3' || org === 'org3') {
+		}
+		else if (org === 'Org3' || org === 'org3') {
 			await connectToOrg3CA();
 		} else {
 			console.log('Usage: node registerUser.js org userID');

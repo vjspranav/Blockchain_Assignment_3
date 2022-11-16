@@ -5,14 +5,12 @@ SPDX-License-Identifier: Apache-2.0
 package auction
 
 import (
-	"encoding/base64"
 	"fmt"
+	"encoding/base64"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric-chaincode-go/pkg/statebased"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-	"github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric-protos-go/msp"
 )
 
 func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionContextInterface) (string, error) {
@@ -26,6 +24,58 @@ func (s *SmartContract) GetSubmittingClientIdentity(ctx contractapi.TransactionC
 		return "", fmt.Errorf("failed to base64 decode clientID: %v", err)
 	}
 	return string(decodeID), nil
+}
+
+// setAssetStateBasedEndorsement sets the endorsement policy of a new auction
+func setAssetStateBasedEndorsement(ctx contractapi.TransactionContextInterface, auctionID string, orgToEndorse string) error {
+
+	endorsementPolicy, err := statebased.NewStateEP(nil)
+	if err != nil {
+		return err
+	}
+	err = endorsementPolicy.AddOrgs(statebased.RoleTypePeer, orgToEndorse)
+	if err != nil {
+		return fmt.Errorf("failed to add org to endorsement policy: %v", err)
+	}
+	policy, err := endorsementPolicy.Policy()
+	if err != nil {
+		return fmt.Errorf("failed to create endorsement policy bytes from org: %v", err)
+	}
+	err = ctx.GetStub().SetStateValidationParameter(auctionID, policy)
+	if err != nil {
+		return fmt.Errorf("failed to set validation parameter on auction: %v", err)
+	}
+
+	return nil
+}
+
+// addAssetStateBasedEndorsement adds a new organization as an endorser of the auction
+func addAssetStateBasedEndorsement(ctx contractapi.TransactionContextInterface, auctionID string, orgToEndorse string) error {
+
+	endorsementPolicy, err := ctx.GetStub().GetStateValidationParameter(auctionID)
+	if err != nil {
+		return err
+	}
+
+	newEndorsementPolicy, err := statebased.NewStateEP(endorsementPolicy)
+	if err != nil {
+		return err
+	}
+
+	err = newEndorsementPolicy.AddOrgs(statebased.RoleTypePeer, orgToEndorse)
+	if err != nil {
+		return fmt.Errorf("failed to add org to endorsement policy: %v", err)
+	}
+	policy, err := newEndorsementPolicy.Policy()
+	if err != nil {
+		return fmt.Errorf("failed to create endorsement policy bytes from org: %v", err)
+	}
+	err = ctx.GetStub().SetStateValidationParameter(auctionID, policy)
+	if err != nil {
+		return fmt.Errorf("failed to set validation parameter on auction: %v", err)
+	}
+
+	return nil
 }
 
 // getCollectionName is an internal helper function to get collection of submitting client identity.
@@ -45,7 +95,6 @@ func getCollectionName(ctx contractapi.TransactionContextInterface) (string, err
 
 // verifyClientOrgMatchesPeerOrg is an internal function used to verify that client org id matches peer org id.
 func verifyClientOrgMatchesPeerOrg(ctx contractapi.TransactionContextInterface) error {
-
 	clientMSPID, err := ctx.GetClientIdentity().GetMSPID()
 	if err != nil {
 		return fmt.Errorf("failed getting the client's MSPID: %v", err)
@@ -69,137 +118,4 @@ func contains(sli []string, str string) bool {
 		}
 	}
 	return false
-}
-
-func setAssetStateBasedEndorsement(ctx contractapi.TransactionContextInterface, assetId string, mspids []string, auditor bool) error {
-
-	principals := make([]*msp.MSPPrincipal, len(mspids))
-	participantSigsPolicy := make([]*common.SignaturePolicy, len(mspids))
-
-	for i, id := range mspids {
-		principal, err := proto.Marshal(
-			&msp.MSPRole{
-				Role:          msp.MSPRole_PEER,
-				MspIdentifier: id,
-			},
-		)
-		if err != nil {
-			return err
-		}
-		principals[i] = &msp.MSPPrincipal{
-			PrincipalClassification: msp.MSPPrincipal_ROLE,
-			Principal:               principal,
-		}
-		participantSigsPolicy[i] = &common.SignaturePolicy{
-			Type: &common.SignaturePolicy_SignedBy{
-				SignedBy: int32(i),
-			},
-		}
-	}
-
-	if auditor == false {
-		// create the defalt policy for an auction without an auditor
-
-		policy := &common.SignaturePolicyEnvelope{
-			Version: 0,
-			Rule: &common.SignaturePolicy{
-				Type: &common.SignaturePolicy_NOutOf_{
-					NOutOf: &common.SignaturePolicy_NOutOf{
-						N:     int32(len(mspids)),
-						Rules: participantSigsPolicy,
-					},
-				},
-			},
-			Identities: principals,
-		}
-
-		spBytes, err := proto.Marshal(policy)
-		if err != nil {
-			return err
-		}
-		err = ctx.GetStub().SetStateValidationParameter(assetId, spBytes)
-		if err != nil {
-			return fmt.Errorf("failed to set validation parameter on auction: %v", err)
-		}
-	} else {
-
-		// create the defalt policy for an auction with an auditor
-
-		// create the auditor identity and signature policy
-		auditorMSP, err := proto.Marshal(
-			&msp.MSPRole{
-				Role:          msp.MSPRole_PEER,
-				MspIdentifier: "Org3MSP",
-			},
-		)
-		if err != nil {
-			return err
-		}
-		principals = append(principals, &msp.MSPPrincipal{
-			PrincipalClassification: msp.MSPPrincipal_ROLE,
-			Principal:               auditorMSP,
-		},
-		)
-		// Create the policies in case the auditor is needed. In this case, an
-		// auditor and 1 participant can update the auction.
-		auditorPolicies := make([]*common.SignaturePolicy, 2)
-		auditorPolicies[0] = &common.SignaturePolicy{
-			Type: &common.SignaturePolicy_SignedBy{
-				SignedBy: int32(len(principals) - 1),
-			},
-		}
-		auditorPolicies[1] = &common.SignaturePolicy{
-			Type: &common.SignaturePolicy_NOutOf_{
-				NOutOf: &common.SignaturePolicy_NOutOf{
-					N:     1,
-					Rules: participantSigsPolicy,
-				},
-			},
-		}
-
-		// For two organizations, the auditor policy below is equivilent to
-		// AND(auditor, OR(Org1, Org2))
-		policies := make([]*common.SignaturePolicy, 2)
-		policies[0] = &common.SignaturePolicy{
-			Type: &common.SignaturePolicy_NOutOf_{
-				NOutOf: &common.SignaturePolicy_NOutOf{
-					N:     2,
-					Rules: auditorPolicies,
-				},
-			},
-		}
-		// Participants can also update the auction without an auditor
-		policies[1] = &common.SignaturePolicy{
-			Type: &common.SignaturePolicy_NOutOf_{
-				NOutOf: &common.SignaturePolicy_NOutOf{
-					N:     int32(len(mspids)),
-					Rules: participantSigsPolicy,
-				},
-			},
-		}
-		// Either the auditor policy or the participant policy can update
-		// the auction. For example, for two organizations, the full policy would be
-		// equivilent to OR(AND(Org1, Org2),AND(auditor, OR(Org1, Org2)))
-		policy := &common.SignaturePolicyEnvelope{
-			Version: 0,
-			Rule: &common.SignaturePolicy{
-				Type: &common.SignaturePolicy_NOutOf_{
-					NOutOf: &common.SignaturePolicy_NOutOf{
-						N:     1,
-						Rules: policies,
-					},
-				},
-			},
-			Identities: principals,
-		}
-		spBytes, err := proto.Marshal(policy)
-		if err != nil {
-			return err
-		}
-		err = ctx.GetStub().SetStateValidationParameter(assetId, spBytes)
-		if err != nil {
-			return fmt.Errorf("failed to set validation parameter on auction: %v", err)
-		}
-	}
-	return nil
 }

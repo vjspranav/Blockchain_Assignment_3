@@ -8,16 +8,17 @@
 
 const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
-const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet, prettyJSONString } = require('../../test-application/javascript/AppUtil.js');
+const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet, prettyJSONString} = require('../../test-application/javascript/AppUtil.js');
 
 const myChannel = 'mychannel';
 const myChaincodeName = 'auction';
 
-async function closeAuction (ccp, wallet, user, auctionID) {
+async function closeAuction(ccp,wallet,user,auctionID) {
 	try {
-		const gateway = new Gateway();
-		// connect using Discovery enabled
 
+		const gateway = new Gateway();
+
+		//connect using Discovery enabled
 		await gateway.connect(ccp,
 			{ wallet: wallet, identity: user, discovery: { enabled: true, asLocalhost: true } });
 
@@ -25,16 +26,16 @@ async function closeAuction (ccp, wallet, user, auctionID) {
 		const contract = network.getContract(myChaincodeName);
 
 		// Query the auction to get the list of endorsing orgs.
-		// console.log('\n--> Evaluate Transaction: query the auction you want to close');
-		const auctionString = await contract.evaluateTransaction('QueryAuction', auctionID);
-		// console.log('*** Result:  Bid: ' + prettyJSONString(auctionString.toString()));
-		const auctionJSON = JSON.parse(auctionString);
+		let auctionString = await contract.evaluateTransaction('QueryAuction',auctionID);
+		let auctionJSON = JSON.parse(auctionString);
 
-		const statefulTxn = contract.createTransaction('CloseAuction');
+		let statefulTxn = contract.createTransaction('CloseAuction');
+
+		// Set the endorsing orgs for this transaction.
 		if (auctionJSON.organizations.length === 3) {
-			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0], auctionJSON.organizations[1], auctionJSON.organizations[2]);
+			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1],auctionJSON.organizations[2]);
 		}else if (auctionJSON.organizations.length === 2) {
-			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0], auctionJSON.organizations[1]);
+			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1]);
 		} else {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0]);
 		}
@@ -44,7 +45,7 @@ async function closeAuction (ccp, wallet, user, auctionID) {
 		console.log('*** Result: committed');
 
 		console.log('\n--> Evaluate Transaction: query the updated auction');
-		const result = await contract.evaluateTransaction('QueryAuction', auctionID);
+		let result = await contract.evaluateTransaction('QueryAuction',auctionID);
 		console.log('*** Result: Auction: ' + prettyJSONString(result.toString()));
 
 		gateway.disconnect();
@@ -54,9 +55,11 @@ async function closeAuction (ccp, wallet, user, auctionID) {
 	}
 }
 
-async function main () {
+async function main() {
 	try {
-		if (process.argv[2] === undefined || process.argv[3] === undefined || process.argv[4] === undefined) {
+
+		if (process.argv[2] === undefined || process.argv[3] === undefined ||
+            process.argv[4] === undefined) {
 			console.log('Usage: node closeAuction.js org userID auctionID');
 			process.exit(1);
 		}
@@ -69,19 +72,21 @@ async function main () {
 			const ccp = buildCCPOrg1();
 			const walletPath = path.join(__dirname, 'wallet/org1');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await closeAuction(ccp, wallet, user, auctionID);
-		} else if (org === 'Org2' || org === 'org2') {
+			await closeAuction(ccp,wallet,user,auctionID);
+		}
+		else if (org === 'Org2' || org === 'org2') {
 			const ccp = buildCCPOrg2();
 			const walletPath = path.join(__dirname, 'wallet/org2');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await closeAuction(ccp, wallet, user, auctionID);
-		} else if (org === 'Org3' || org === 'org3') {
+			await closeAuction(ccp,wallet,user,auctionID);
+		}
+		else if (org === 'Org3' || org === 'org3') {
 			const ccp = buildCCPOrg3();
 			const walletPath = path.join(__dirname, 'wallet/org3');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await closeAuction(ccp, wallet, user, auctionID);
-		} else {
-			console.log('Usage: node closeAuction.js org userID auctionID');
+			await closeAuction(ccp,wallet,user,auctionID);
+		}  else {
+			console.log('Usage: node closeAuction.js org userID auctionID ');
 			console.log('Org must be Org1 or Org2');
 		}
 	} catch (error) {
@@ -92,5 +97,6 @@ async function main () {
 		process.exit(1);
 	}
 }
+
 
 main();

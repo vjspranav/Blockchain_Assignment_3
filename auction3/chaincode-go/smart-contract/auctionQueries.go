@@ -70,7 +70,7 @@ func (s *SmartContract) QueryBid(ctx contractapi.TransactionContextInterface, au
 	}
 
 	// check that the client querying the bid is the bid owner
-	if bid.Buyer != clientID {
+	if bid.Bidder != clientID {
 		return nil, fmt.Errorf("Permission denied, client id %v is not the owner of the bid", clientID)
 	}
 
@@ -121,11 +121,11 @@ func checkForHigherBid(ctx contractapi.TransactionContextInterface, auctionPrice
 
 			} else {
 
-				hash, err := ctx.GetStub().GetPrivateDataHash(collection, bidKey)
+				Hash, err := ctx.GetStub().GetPrivateDataHash(collection, bidKey)
 				if err != nil {
 					return fmt.Errorf("failed to read bid hash from collection: %v", err)
 				}
-				if hash == nil {
+				if Hash == nil {
 					return fmt.Errorf("bid hash does not exist: %s", bidKey)
 				}
 			}

@@ -8,16 +8,27 @@
 
 const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
-const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet, prettyJSONString } = require('../../test-application/javascript/AppUtil.js');
+const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet } = require('../../test-application/javascript/AppUtil.js');
 
 const myChannel = 'mychannel';
 const myChaincodeName = 'auction';
 
-async function submitBid (ccp, wallet, user, auctionID, bidID) {
-	try {
-		const gateway = new Gateway();
-		// connect using Discovery enabled
 
+function prettyJSONString(inputString) {
+	if (inputString) {
+		return JSON.stringify(JSON.parse(inputString), null, 2);
+	}
+	else {
+		return inputString;
+	}
+}
+
+async function submitBid(ccp,wallet,user,auctionID,bidID) {
+	try {
+
+		const gateway = new Gateway();
+
+		//connect using Discovery enabled
 		await gateway.connect(ccp,
 			{ wallet: wallet, identity: user, discovery: { enabled: true, asLocalhost: true } });
 
@@ -25,22 +36,25 @@ async function submitBid (ccp, wallet, user, auctionID, bidID) {
 		const contract = network.getContract(myChaincodeName);
 
 		console.log('\n--> Evaluate Transaction: query the auction you want to join');
-		const auctionString = await contract.evaluateTransaction('QueryAuction', auctionID);
-		const auctionJSON = JSON.parse(auctionString);
+		let auctionString = await contract.evaluateTransaction('QueryAuction',auctionID);
+		let auctionJSON = JSON.parse(auctionString);
 
-		const statefulTxn = contract.createTransaction('SubmitBid');
+		let statefulTxn = contract.createTransaction('SubmitBid');
 
+		if (auctionJSON.organizations.lrngth === 3){
+			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1],auctionJSON.organizations[2]);
+		}
 		if (auctionJSON.organizations.length === 2) {
-			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0], auctionJSON.organizations[1]);
+			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0],auctionJSON.organizations[1]);
 		} else {
 			statefulTxn.setEndorsingOrganizations(auctionJSON.organizations[0]);
 		}
 
 		console.log('\n--> Submit Transaction: add bid to the auction');
-		await statefulTxn.submit(auctionID, bidID);
+		await statefulTxn.submit(auctionID,bidID);
 
 		console.log('\n--> Evaluate Transaction: query the auction to see that our bid was added');
-		const result = await contract.evaluateTransaction('QueryAuction', auctionID);
+		let result = await contract.evaluateTransaction('QueryAuction',auctionID);
 		console.log('*** Result: Auction: ' + prettyJSONString(result.toString()));
 
 		gateway.disconnect();
@@ -50,8 +64,9 @@ async function submitBid (ccp, wallet, user, auctionID, bidID) {
 	}
 }
 
-async function main () {
+async function main() {
 	try {
+
 		if (process.argv[2] === undefined || process.argv[3] === undefined ||
             process.argv[4] === undefined || process.argv[5] === undefined) {
 			console.log('Usage: node submitBid.js org userID auctionID bidID');
@@ -67,20 +82,23 @@ async function main () {
 			const ccp = buildCCPOrg1();
 			const walletPath = path.join(__dirname, 'wallet/org1');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await submitBid(ccp, wallet, user, auctionID, bidID);
-		} else if (org === 'Org2' || org === 'org2') {
+			await submitBid(ccp,wallet,user,auctionID,bidID);
+		}
+		else if (org === 'Org2' || org === 'org2') {
 			const ccp = buildCCPOrg2();
 			const walletPath = path.join(__dirname, 'wallet/org2');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await submitBid(ccp, wallet, user, auctionID, bidID);
-		} else if (org === 'Org3' || org === 'org3') {
+			await submitBid(ccp,wallet,user,auctionID,bidID);
+		}
+		else if(org === 'Org3' || org === 'org3') {
 			const ccp = buildCCPOrg3();
 			const walletPath = path.join(__dirname, 'wallet/org3');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await submitBid(ccp, wallet, user, auctionID, bidID);
-		} else {
+			await submitBid(ccp,wallet,user,auctionID,bidID);
+		}
+		else {
 			console.log('Usage: node submitBid.js org userID auctionID bidID');
-			console.log('Org must be Org1 or Org2');
+			console.log('Org must be Org1 or Org2 or Org3');
 		}
 	} catch (error) {
 		console.error(`******** FAILED to run the application: ${error}`);
@@ -90,5 +108,6 @@ async function main () {
 		process.exit(1);
 	}
 }
+
 
 main();

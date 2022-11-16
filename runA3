@@ -19,13 +19,11 @@ node registerEnrollUser.js org1 seller
 
 node registerEnrollUser.js org1 bidder1
 node registerEnrollUser.js org2 bidder2
-node registerEnrollUser.js org2 bidder3
-node registerEnrollUser.js org3 bidder4
+node registerEnrollUser.js org3 bidder3
 
-# org3 will act as auditor
-node createAuction.js org1 seller Auction3 items 100 withAuditor
+node createAuction.js org1 seller Auction3 Item1
 
-OUTPUT=$(node bid.js org1 bidder1 Auction3 50 100)
+OUTPUT=$(node bid.js org1 bidder1 Auction3 500)
 echo $OUTPUT
 # Get line contaiining SAVE THIS VALUE
 SAVE_THIS_VALUE=$(echo "$OUTPUT" | grep "SAVE THIS VALUE")
@@ -34,8 +32,8 @@ bidId1=$(echo "$SAVE_THIS_VALUE" | cut -d':' -f2 | xargs)
 echo $bidId1
 node submitBid.js org1 bidder1 Auction3 $bidId1
 
-# Second Bidder: 50 price
-OUTPUT=$(node bid.js org2 bidder2 Auction3 40 50)
+# Second Bidder: 800 price
+OUTPUT=$(node bid.js org2 bidder2 Auction3 800)
 echo $OUTPUT
 # Get line contaiining SAVE THIS VALUE
 SAVE_THIS_VALUE=$(echo "$OUTPUT" | grep "SAVE THIS VALUE")
@@ -43,23 +41,14 @@ SAVE_THIS_VALUE=$(echo "$OUTPUT" | grep "SAVE THIS VALUE")
 bidId2=$(echo "$SAVE_THIS_VALUE" | cut -d':' -f2 | xargs)
 node submitBid.js org2 bidder2 Auction3 $bidId2
 
-# Third Bidder: 100 price
-OUTPUT=$(node bid.js org2 bidder3 Auction3 10 100)
+# Third Bidder: 700 price
+OUTPUT=$(node bid.js org3 bidder3 Auction3 700)
 echo $OUTPUT
 # Get line contaiining SAVE THIS VALUE
 SAVE_THIS_VALUE=$(echo "$OUTPUT" | grep "SAVE THIS VALUE")
 # Get the value after : and trim whitespace
 bidId3=$(echo "$SAVE_THIS_VALUE" | cut -d':' -f2 | xargs)
-node submitBid.js org2 bidder3 Auction3 $bidId3
-
-# Fourth Bidder: 50 price 50 quantity
-OUTPUT=$(node bid.js org3 bidder4 Auction3 50 50)
-echo $OUTPUT
-# Get line contaiining SAVE THIS VALUE
-SAVE_THIS_VALUE=$(echo "$OUTPUT" | grep "SAVE THIS VALUE")
-# Get the value after : and trim whitespace
-bidId4=$(echo "$SAVE_THIS_VALUE" | cut -d':' -f2 | xargs)
-node submitBid.js org3 bidder4 Auction3 $bidId4
+node submitBid.js org3 bidder3 Auction3 $bidId3
 
 # Close Auction
 node closeAuction.js org1 seller Auction3
@@ -67,12 +56,39 @@ node closeAuction.js org1 seller Auction3
 # Revealing Stage
 node revealBid.js org1 bidder1 Auction3 $bidId1
 node revealBid.js org2 bidder2 Auction3 $bidId2
-node revealBid.js org3 bidder4 Auction3 $bidId4
+node revealBid.js org3 bidder3 Auction3 $bidId3
 
-# Ending auction prematurely through auditor
-node endAuctionwithAuditor.js org1 seller Auction3
+# Declare Winner
+OUTPUT=$(node endAuction.js org1 seller Auction3)
+echo $OUTPUT
+# Get line containing "winner":
+WINNER=$(echo "$OUTPUT" | grep "winner\"")
+
+# cut at first = till , 
+winner=$(echo "$WINNER" | cut -d'=' -f2 | cut -d',' -f1 | xargs)
+
+# Cut at second = till + 
+org=$(echo "$WINNER" | cut -d'=' -f3 | cut -d'+' -f1 | xargs)
+
+# Get string after "\"winner\":" from $OUTPUT
+price="${OUTPUT##*\"price\":}"
+# Get string before "," from $winner
+price="${price%%,*}"
+
+echo $winner $org
 
 # Clean Up
 rm -rf wallet
 cd ../../test-network/
 ./network.sh down
+
+# check if winner and org are empty
+if [ -z "$winner" ] && [ -z "$org" ]
+then
+    # Print auction failed in red
+    echo -e "\e[31mAuction Failed\e[0m" 
+    exit 1
+fi
+
+# Print in green color winner and org
+echo -e "\e[32mWinner is $winner from $org bidding 800 paying average price of $price\e[0m"

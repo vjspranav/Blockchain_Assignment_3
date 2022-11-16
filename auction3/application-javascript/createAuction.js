@@ -8,30 +8,31 @@
 
 const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
-const { buildCCPOrg1, buildCCPOrg2, buildCCPOrg3, buildWallet, prettyJSONString } = require('../../test-application/javascript/AppUtil.js');
+const { buildCCPOrg1, buildCCPOrg2, buildWallet, prettyJSONString} = require('../../test-application/javascript/AppUtil.js');
 
 const myChannel = 'mychannel';
 const myChaincodeName = 'auction';
 
-async function createAuction (ccp, wallet, user, auctionID, item, quantity, auditor) {
+async function createAuction(ccp,wallet,user,auctionID,item) {
 	try {
-		const gateway = new Gateway();
-		// connect using Discovery enabled
 
+		const gateway = new Gateway();
+
+		//connect using Discovery enabled
 		await gateway.connect(ccp,
 			{ wallet: wallet, identity: user, discovery: { enabled: true, asLocalhost: true } });
 
 		const network = await gateway.getNetwork(myChannel);
 		const contract = network.getContract(myChaincodeName);
 
-		const statefulTxn = contract.createTransaction('CreateAuction');
+		let statefulTxn = contract.createTransaction('CreateAuction');
 
 		console.log('\n--> Submit Transaction: Propose a new auction');
-		await statefulTxn.submit(auctionID, item, parseInt(quantity), auditor);
+		await statefulTxn.submit(auctionID,item);
 		console.log('*** Result: committed');
 
 		console.log('\n--> Evaluate Transaction: query the auction that was just created');
-		const result = await contract.evaluateTransaction('QueryAuction', auctionID);
+		let result = await contract.evaluateTransaction('QueryAuction',auctionID);
 		console.log('*** Result: Auction: ' + prettyJSONString(result.toString()));
 
 		gateway.disconnect();
@@ -40,12 +41,12 @@ async function createAuction (ccp, wallet, user, auctionID, item, quantity, audi
 	}
 }
 
-async function main () {
+async function main() {
 	try {
+
 		if (process.argv[2] === undefined || process.argv[3] === undefined ||
-            process.argv[4] === undefined || process.argv[5] === undefined ||
-            process.argv[6] === undefined) {
-			console.log('Usage: node createAuction.js org userID auctionID item quantity');
+            process.argv[4] === undefined || process.argv[5] === undefined) {
+			console.log('Usage: node createAuction.js org userID auctionID item');
 			process.exit(1);
 		}
 
@@ -53,31 +54,26 @@ async function main () {
 		const user = process.argv[3];
 		const auctionID = process.argv[4];
 		const item = process.argv[5];
-		const quantity = process.argv[6];
-		const auditor = process.argv[7];
 
 		if (org === 'Org1' || org === 'org1') {
 			const ccp = buildCCPOrg1();
 			const walletPath = path.join(__dirname, 'wallet/org1');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await createAuction(ccp, wallet, user, auctionID, item, quantity, auditor);
-		} else if (org === 'Org2' || org === 'org2') {
+			await createAuction(ccp,wallet,user,auctionID,item);
+		}
+		else if (org === 'Org2' || org === 'org2') {
 			const ccp = buildCCPOrg2();
 			const walletPath = path.join(__dirname, 'wallet/org2');
 			const wallet = await buildWallet(Wallets, walletPath);
-			await createAuction(ccp, wallet, user, auctionID, item, quantity, auditor);
-		} else if (org === 'Org3' || org === 'org3') {
-			const ccp = buildCCPOrg3();
-			const walletPath = path.join(__dirname, 'wallet/org3');
-			const wallet = await buildWallet(Wallets, walletPath);
-			await createAuction(ccp, wallet, user, auctionID, item, quantity, auditor);
-		} else {
-			console.log('Usage: node createAuction.js org userID auctionID item quantity');
+			await createAuction(ccp,wallet,user,auctionID,item);
+		}  else {
+			console.log('Usage: node createAuction.js org userID auctionID item');
 			console.log('Org must be Org1 or Org2');
 		}
 	} catch (error) {
 		console.error(`******** FAILED to run the application: ${error}`);
 	}
 }
+
 
 main();

@@ -13,11 +13,17 @@ import (
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
+/**
+ * SmartContract structure
+ */
 type SmartContract struct {
 	contractapi.Contract
 }
 
-// Auction data
+/**
+ * Auction is asset describing the item to be auctioned
+ *
+ */
 type Auction struct {
 	Type         string             `json:"objectType"`
 	ItemSold     string             `json:"item"`
@@ -30,7 +36,10 @@ type Auction struct {
 	Status       string             `json:"status"`
 }
 
-// FullBid is the structure of a revealed bid
+/**
+ * FullBid is the structure of a revealed bid
+ *
+ */
 type FullBid struct {
 	Type   string `json:"objectType"`
 	Price  int    `json:"price"`
@@ -38,7 +47,10 @@ type FullBid struct {
 	Bidder string `json:"bidder"`
 }
 
-// BidHash is the structure of a private bid
+/**
+ * BidHash is the structure of a private bid
+ *
+ */
 type BidHash struct {
 	Org  string `json:"org"`
 	Hash string `json:"hash"`
@@ -46,8 +58,13 @@ type BidHash struct {
 
 const bidKeyType = "bid"
 
-// CreateAuction creates on auction on the public channel. The identity that
-// submits the transacion becomes the seller of the auction
+/**
+ * CreateAuction creates on auction on the public channel. The identity that
+ * submits the transacion becomes the seller of the auction
+ *
+ * @param auctionId id of auction
+ * @param itemsold
+ */
 func (s *SmartContract) CreateAuction(ctx contractapi.TransactionContextInterface, auctionID string, itemsold string) error {
 
 	// get ID of submitting client
@@ -98,9 +115,13 @@ func (s *SmartContract) CreateAuction(ctx contractapi.TransactionContextInterfac
 	return nil
 }
 
-// Bid is used to add a user's bid to the auction. The bid is stored in the private
-// data collection on the peer of the bidder's organization. The function returns
-// the transaction ID so that users can identify and query their bid
+/**
+ * Bid is used to add a user's bid to the auction. The bid is stored in the private
+ * data collection on the peer of the bidder's organization. The function returns
+ * the transaction ID so that users can identify and query their bid
+ *
+ * @param auctionId id of auction
+ */
 func (s *SmartContract) Bid(ctx contractapi.TransactionContextInterface, auctionID string) (string, error) {
 
 	// get bid from transient map
@@ -145,9 +166,14 @@ func (s *SmartContract) Bid(ctx contractapi.TransactionContextInterface, auction
 	return txID, nil
 }
 
-// SubmitBid is used by the bidder to add the hash of that bid stored in private data to the
-// auction. Note that this function alters the auction in private state, and needs
-// to meet the auction endorsement policy. Transaction ID is used identify the bid
+/**
+ * SubmitBid is used by the bidder to add the hash of that bid stored in private data to the
+ * auction. Note that this function alters the auction in private state, and needs
+ * to meet the auction endorsement policy. Transaction ID is used identify the bid
+ *
+ * @param auctionId id of auction
+ * @param txId id of the corresponding text
+ */
 func (s *SmartContract) SubmitBid(ctx contractapi.TransactionContextInterface, auctionID string, txID string) error {
 
 	// get the MSP ID of the bidder's org
@@ -222,7 +248,12 @@ func (s *SmartContract) SubmitBid(ctx contractapi.TransactionContextInterface, a
 	return nil
 }
 
-// RevealBid is used by a bidder to reveal their bid after the auction is closed
+/**
+ * RevealBid is used by a bidder to reveal their bid after the auction is closed
+ *
+ * @param auctionId id of auction
+ * @param txId id of the corresponding text
+ */
 func (s *SmartContract) RevealBid(ctx contractapi.TransactionContextInterface, auctionID string, txID string) error {
 
 	// get bid from transient map
@@ -354,8 +385,12 @@ func (s *SmartContract) RevealBid(ctx contractapi.TransactionContextInterface, a
 	return nil
 }
 
-// CloseAuction can be used by the seller to close the auction. This prevents
-// bids from being added to the auction, and allows users to reveal their bid
+/**
+ * CloseAuction can be used by the seller to close the auction. This prevents
+ * bids from being added to the auction, and allows users to reveal their bid
+ *
+ * @param auctionId id of auction
+ */
 func (s *SmartContract) CloseAuction(ctx contractapi.TransactionContextInterface, auctionID string) error {
 
 	// get auction from public state
@@ -394,8 +429,12 @@ func (s *SmartContract) CloseAuction(ctx contractapi.TransactionContextInterface
 	return nil
 }
 
-// EndAuction both changes the auction status to closed and calculates the winners
-// of the auction
+/**
+ * EndAuction both changes the auction status to closed and calculates the winners
+ * of the auction
+ *
+ * @param auctionId id of auction
+ */
 func (s *SmartContract) EndAuction(ctx contractapi.TransactionContextInterface, auctionID string) error {
 
 	// get auction from public state
